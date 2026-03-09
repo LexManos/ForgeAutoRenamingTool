@@ -26,9 +26,9 @@ public interface RenamerExtension {
 
     void mappings(Dependency dependency);
 
-    void mappings(Provider<? extends Dependency> dependency);
+    void mappings(Provider<?> dependency);
 
-    default void mappings(ProviderConvertible<? extends Dependency> dependency) {
+    default void mappings(ProviderConvertible<?> dependency) {
         this.mappings(dependency.asProvider());
     }
 
@@ -105,4 +105,14 @@ public interface RenamerExtension {
     	return merge(name, task -> {});
     }
     TaskProvider<MergeMappings> merge(String name, Action<? super MergeMappings> action);
+
+    /// Does Mixin Magic. See https://github.com/MinecraftForge/renamer/issues/36 for more info
+    ///
+    ///
+    ///
+    default MixinConfig enableMixins() {
+    	return enableMixins(task -> {});
+    }
+    MixinConfig enableMixins(Action<? super MixinConfig> action);
+    MixinConfig getMixin();
 }
