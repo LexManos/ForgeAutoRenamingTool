@@ -49,6 +49,7 @@ dependencies {
 renamer.classes(tasks.named('jar', Jar)) {
     map = files('libs/mappings_test-1.0.tsrg.gz')
     accessTransformers = true
+    archiveClassifier = 'renamed'
 }
 
 renamer.classes('renameJarLegacy', tasks.named('jar', Jar)) {

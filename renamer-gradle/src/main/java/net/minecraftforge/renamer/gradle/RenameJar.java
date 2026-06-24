@@ -67,29 +67,38 @@ public abstract class RenameJar extends ToolExecBase<RenamerProblems> implements
         // As a reminder, this is overridden by manually calling one of the #mappings methods
         this.getMap().convention(getProviders().provider(() -> renamer.mappings));
 
+        // This is the path used for arbitrary file input
+        // Not when used on AbstractArchiveTasks
+        // Basically what we do is just take the input file name, and unless told otherwise append a '-renamed' suffix to it
+        // We also make sure the output file ends up in our project directory, as renaming dependencies can cause conflicts if we are in a multi-project build
         this.getOutput().convention(
-            getObjects().fileProperty().fileProvider(getProviders().zip(this.getInput().getLocationOnly(), this.getArchiveClassifier().orElse(""), (input, classifier) -> {
+            getObjects().fileProperty().fileProvider(getProviders().zip(this.getInput().getLocationOnly(), this.getArchiveClassifier().orElse("renamed"), (input, classifier) -> {
                 var file = input.getAsFile();
-                String name;
-                {
-                    int idx = file.getName().lastIndexOf('.');
-                    var inputName = file.getName().substring(0, idx);
-                    var ext = file.getName().substring(idx);
+                var outputDir = file.getParentFile();
 
-                    if (classifier.isEmpty())
-                        classifier = "renamed";
-
-                    name = inputName + '-' + classifier + ext;
-
-                    if (name.equals(file.getName()))
-                        name = inputName + '-' + classifier + "-renamed" + ext;
-                }
-                var parent = file.getParentFile();
                 var projectDir = this.getProject().getLayout().getProjectDirectory().getAsFile().getAbsolutePath();
                 // the file isn't in our project, which could cause inter-project issues. So pick a spot in our project
-                if (!parent.getAbsolutePath().startsWith(projectDir))
-                    return this.localCaches().file(String.format("renamed/%s", name)).get().getAsFile();
-                return new File(file.getParentFile(), name);
+                if (outputDir == null || !outputDir.getAbsolutePath().startsWith(projectDir))
+                    outputDir = this.localCaches().dir("renamed").get().getAsFile();
+
+                String name;
+                int idx = file.getName().lastIndexOf('.');
+                var inputName = file.getName().substring(0, idx);
+
+                var ext = file.getName().substring(idx + 1);
+                if (this.getArchiveExtension().isPresent())
+                    ext = this.getArchiveExtension().get();
+
+                if (classifier.isEmpty())
+                    name = inputName + '.' + ext;
+                else
+                    name = inputName + '-' + classifier + '.' + ext;
+
+                var ret = new File(outputDir, name);
+                // If all else fails, just append -renamed
+                if (ret.getAbsolutePath().equals(file.getAbsolutePath()))
+                    ret = new File(outputDir, inputName + "-renamed." + ext);
+                return ret;
             })).orElse(this.getDefaultOutputFile())
         );
         this.getLibraries().convention(getProject().getExtensions().getByType(JavaPluginExtension.class).getSourceSets().named(SourceSet.MAIN_SOURCE_SET_NAME).map(SourceSet::getCompileClasspath));
@@ -114,9 +123,24 @@ public abstract class RenameJar extends ToolExecBase<RenamerProblems> implements
     }
 
     public void from(TaskProvider<? extends AbstractArchiveTask> task) {
+        var libs = this.getProject().getLayout().getBuildDirectory().dir("libs");
         this.getInput().set(task.flatMap(AbstractArchiveTask::getArchiveFile));
         this.getArchiveClassifier().set(task.flatMap(AbstractArchiveTask::getArchiveClassifier).filter(Util.STRING_IS_PRESENT).map(s -> s + "-renamed").orElse("renamed"));
         this.getArchiveExtension().set(task.flatMap(AbstractArchiveTask::getArchiveExtension).orElse("jar"));
+        this.getOutput().set(getObjects().fileProperty().fileProvider(
+            task.flatMap(AbstractArchiveTask::getArchiveBaseName)
+            .zip(task.flatMap(AbstractArchiveTask::getArchiveAppendix).orElse(""), RenameJar::append)
+            .zip(task.flatMap(AbstractArchiveTask::getArchiveVersion).orElse(""), RenameJar::append)
+            .zip(this.getArchiveClassifier().orElse(""), RenameJar::append)
+            .zip(this.getArchiveExtension().orElse(""), (name, ext) -> ext.isEmpty() ? name : name + '.' + ext)
+            .zip(libs, (name, dir) -> dir.file(name).getAsFile())
+        ));
+    }
+
+    private static String append(String prefix, @Nullable String value) {
+        if (value != null && !value.isEmpty())
+            return prefix + '-' + value;
+        return prefix;
     }
 
     public void mappings(String artifact) {
