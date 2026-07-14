@@ -120,7 +120,7 @@ public interface MixinConfig extends MixinSourceSetConfig {
 	TaskProvider<ConvertMappings> getMappings();
 
 	/**
-	 * Configures the {@link getMappings()} task, which is used to format mappings so that the Mixin AnnotationProcessor
+	 * Configures the {@link #getMappings()} task, which is used to format mappings so that the Mixin AnnotationProcessor
 	 * can handle them.
 	 */
 	default TaskProvider<ConvertMappings> mappings(Action<? super ConvertMappings> action) {

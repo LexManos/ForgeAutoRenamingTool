@@ -23,6 +23,7 @@ import org.gradle.api.provider.Provider;
 import org.gradle.api.tasks.SourceSet;
 import org.gradle.api.tasks.compile.JavaCompile;
 import org.gradle.process.CommandLineArgumentProvider;
+import org.jspecify.annotations.Nullable;
 
 abstract class MixinSourceSetConfigImpl implements MixinSourceSetConfig {
 	private static final Logger LOGGER = LogManager.getLogger(MixinConfig.class);
@@ -38,7 +39,7 @@ abstract class MixinSourceSetConfigImpl implements MixinSourceSetConfig {
 		var project = this.ext.getProject();
 		this.config = project.getObjects().newInstance(MixinSourceSetConfig.class);
 
-		this.getRefMap().convention(name + ".refmap.json");
+		this.getRefMap().convention(project.provider(() -> getRefMapName(main, name)));
 		this.getDisableTargetValidator().convention(main.getDisableTargetValidator());
 		this.getDisableTargetExport().convention(main.getDisableTargetExport());
 		this.getDisableOverwriteChecker().convention(main.getDisableOverwriteChecker());
@@ -127,6 +128,31 @@ abstract class MixinSourceSetConfigImpl implements MixinSourceSetConfig {
 		return this.config.getMessages();
 	}
 	// endregion
+
+	private static String getRefMapName(MixinConfigImpl main, String sourceSet) {
+		var mainName = main.getRefMap().isPresent() ? main.getRefMap().get() : null;
+
+		// If the main isn't set, use the default
+		if (mainName == null || mainName.isEmpty())
+			return sourceSet + ".refmap.json";
+
+		// Replace the source set name if requested
+		if (mainName.contains("{source}"))
+			return mainName.replace("{source}", sourceSet);
+
+		// If we don't have a replacement, and we're the main source set, just use the main name.
+		if ("main".equals(sourceSet))
+			return mainName;
+
+		int idx = mainName.indexOf('.');
+
+		// If they have a . add `source.` after it: `modid.refmap.json` -> `modid.test.refmap.json`
+		if (idx != -1)
+			return mainName.substring(0, idx) + '.' + sourceSet + mainName.substring(idx);
+
+		// If all else fails, use the default
+		return sourceSet + ".refmap.json";
+	}
 
 	abstract static class CompilerArgs implements CommandLineArgumentProvider {
 		private final MixinSourceSetConfig config;
