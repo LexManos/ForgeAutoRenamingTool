@@ -23,7 +23,7 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import net.minecraftforge.renamer.api.Transformer;
 
-class MixinRenamer implements Transformer {
+final class MixinRenamer implements Transformer {
     private static final String MANIFEST_NAME = "META-INF/MANIFEST.MF";
     private static final Attributes.Name MIXIN_CONFIGS = new Attributes.Name("MixinConfigs");
     private static final Gson GSON = new GsonBuilder()
