@@ -9,7 +9,6 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.Reader;
 import java.nio.charset.StandardCharsets;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -22,14 +21,13 @@ import org.jetbrains.annotations.Nullable;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
-import com.google.gson.internal.LinkedTreeMap;
-
 import net.minecraftforge.renamer.api.Transformer;
 
 class MixinRenamer implements Transformer {
     private static final String MANIFEST_NAME = "META-INF/MANIFEST.MF";
     private static final Attributes.Name MIXIN_CONFIGS = new Attributes.Name("MixinConfigs");
     private static final Gson GSON = new GsonBuilder()
+        .disableHtmlEscaping()
         .setPrettyPrinting()
         .create();
 
