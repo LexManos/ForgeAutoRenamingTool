@@ -143,7 +143,7 @@ final class MixinRenamer implements Transformer {
        //public @Nullable Map<String, Map<String, Map<String, String>>> data;
     }
 
-    private static class MemberInfo {
+    private static final class MemberInfo {
         private final String owner;
         private final String name;
         private final String quantifier;
