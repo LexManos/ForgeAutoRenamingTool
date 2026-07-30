@@ -100,7 +100,7 @@ class MixinRenamer implements Transformer {
         return ResourceEntry.create(resource.getName(), resource.getTime(), json.getBytes(StandardCharsets.UTF_8));
     }
 
-    private @Nullable String[] findConfigs(Entry entry) {
+    private String @Nullable [] findConfigs(Entry entry) {
         try {
             Manifest mf = new Manifest(new ByteArrayInputStream(entry.getData()));
             String value = (String)mf.getMainAttributes().get(MIXIN_CONFIGS);
