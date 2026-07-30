@@ -21,7 +21,7 @@ import org.gradle.api.tasks.TaskProvider;
 import org.jspecify.annotations.Nullable;
 
 final class Util extends SharedUtil {
-	static final String FORGE_GRADLE_PLUGIN = "net.minecraftforge.gradle";
+    static final String FORGE_GRADLE_PLUGIN = "net.minecraftforge.gradle";
 
     static final Spec<? super String> STRING_IS_PRESENT = s -> !s.isBlank();
 
@@ -31,23 +31,23 @@ final class Util extends SharedUtil {
     }
 
     static Configuration toConfiguration(Project project, Provider<?> input) {
-    	if (input == null)
-    		return null;
-    	var ret = project.getConfigurations().detachedConfiguration();
-    	ret.setTransitive(false);
-    	var deps = project.getDependencies();
-    	ret.getDependencies().addLater(input.map(value -> {
-    		if (value instanceof Dependency dep)
-    			return dep;
-    		if (value instanceof File file)
-    			return deps.create(project.files(file));
-    		return deps.create(value);
-    	}));
-    	return ret;
+        if (input == null)
+            return null;
+        var ret = project.getConfigurations().detachedConfiguration();
+        ret.setTransitive(false);
+        var deps = project.getDependencies();
+        ret.getDependencies().addLater(input.map(value -> {
+            if (value instanceof Dependency dep)
+                return dep;
+            if (value instanceof File file)
+                return deps.create(project.files(file));
+            return deps.create(value);
+        }));
+        return ret;
     }
 
     // Note: I would rather have this take in ? extends SingleFileOutput but this isn't FG and thats not a standard helper interface
     static Provider<File> toFile(TaskProvider<?> provider) {
-    	return provider.flatMap(task -> ((RegularFileProperty)InvokerHelper.getProperty(task, "output")).getAsFile());
+        return provider.flatMap(task -> ((RegularFileProperty)InvokerHelper.getProperty(task, "output")).getAsFile());
     }
 }

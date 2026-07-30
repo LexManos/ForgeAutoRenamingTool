@@ -26,57 +26,57 @@ import net.minecraftforge.srgutils.IMappingFile;
 import net.minecraftforge.srgutils.IMappingFile.Format;
 
 public abstract class ChainMappings extends DefaultTask implements RenamerTask {
-	public abstract @InputFiles @Classpath ConfigurableFileCollection getLeft();
-	public abstract @InputFiles @Classpath ConfigurableFileCollection getRight();
-	public abstract @OutputFile RegularFileProperty getOutput();
-	public abstract @Input Property<String> getFormat();
-	public abstract @Input Property<Boolean> getReverse();
+    public abstract @InputFiles @Classpath ConfigurableFileCollection getLeft();
+    public abstract @InputFiles @Classpath ConfigurableFileCollection getRight();
+    public abstract @OutputFile RegularFileProperty getOutput();
+    public abstract @Input Property<String> getFormat();
+    public abstract @Input Property<Boolean> getReverse();
 
-	@Inject
-	public ChainMappings() {
-		var output = getProject().getLayout().getBuildDirectory().dir("mappings");
-		this.getOutput().convention(output.map(d -> d.file(getName() + '.' + this.getFormat().get())));
-		this.getFormat().convention("tsrg");
-		this.getReverse().convention(false);
-	}
+    @Inject
+    public ChainMappings() {
+        var output = getProject().getLayout().getBuildDirectory().dir("mappings");
+        this.getOutput().convention(output.map(d -> d.file(getName() + '.' + this.getFormat().get())));
+        this.getFormat().convention("tsrg");
+        this.getReverse().convention(false);
+    }
 
-	@TaskAction
-	protected void exec() throws IOException {
-		var left = IMappingFile.load(this.getLeft().getSingleFile());
-		var right = IMappingFile.load(this.getRight().getSingleFile());
+    @TaskAction
+    protected void exec() throws IOException {
+        var left = IMappingFile.load(this.getLeft().getSingleFile());
+        var right = IMappingFile.load(this.getRight().getSingleFile());
 
-		var output = getOutput().getAsFile().get();
+        var output = getOutput().getAsFile().get();
 
-		var format = Format.get(getFormat().get().toLowerCase(Locale.ENGLISH));
-		if (format == null)
-			throw new IllegalArgumentException("Unknown format: " + getFormat().get());
+        var format = Format.get(getFormat().get().toLowerCase(Locale.ENGLISH));
+        if (format == null)
+            throw new IllegalArgumentException("Unknown format: " + getFormat().get());
 
-		Files.createDirectories(output.getParentFile().toPath());
-		var map = left.chain(right);
-		map.write(output.toPath(), format, getReverse().get());
-	}
+        Files.createDirectories(output.getParentFile().toPath());
+        var map = left.chain(right);
+        map.write(output.toPath(), format, getReverse().get());
+    }
 
-	public void left(Provider<?> provider) {
-		this.getLeft().setFrom(Util.toConfiguration(getProject(), provider));
-	}
+    public void left(Provider<?> provider) {
+        this.getLeft().setFrom(Util.toConfiguration(getProject(), provider));
+    }
 
-	public void left(TaskProvider<?> task) {
-		this.getLeft().setFrom(Util.toFile(task));
-	}
+    public void left(TaskProvider<?> task) {
+        this.getLeft().setFrom(Util.toFile(task));
+    }
 
-	public void left(ConfigurableFileCollection value) {
-		this.getLeft().setFrom(value);
-	}
+    public void left(ConfigurableFileCollection value) {
+        this.getLeft().setFrom(value);
+    }
 
-	public void right(Provider<?> provider) {
-		this.getRight().setFrom(Util.toConfiguration(getProject(), provider));
-	}
+    public void right(Provider<?> provider) {
+        this.getRight().setFrom(Util.toConfiguration(getProject(), provider));
+    }
 
-	public void right(TaskProvider<?> task) {
-		this.getRight().setFrom(Util.toFile(task));
-	}
+    public void right(TaskProvider<?> task) {
+        this.getRight().setFrom(Util.toFile(task));
+    }
 
-	public void right(ConfigurableFileCollection value) {
-		this.getRight().setFrom(value);
-	}
+    public void right(ConfigurableFileCollection value) {
+        this.getRight().setFrom(value);
+    }
 }

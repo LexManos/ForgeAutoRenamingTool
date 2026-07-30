@@ -21,7 +21,7 @@ abstract class RenamerPlugin extends EnhancedPlugin<Project> {
 
     @Override
     public void setup(Project project) {
-    	project.getPluginManager().apply(BasePlugin.class);
+        project.getPluginManager().apply(BasePlugin.class);
         project.getExtensions().create(RenamerExtension.class, "renamer", RenamerExtensionImpl.class);
     }
 }

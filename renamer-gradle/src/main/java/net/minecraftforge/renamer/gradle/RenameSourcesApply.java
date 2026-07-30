@@ -49,7 +49,7 @@ import java.util.zip.ZipOutputStream;
 import javax.inject.Inject;
 
 public abstract class RenameSourcesApply extends RenameSourceBase implements PublishArtifact {
-	private static final Pattern SRG_PATTERN = Pattern.compile("(?:[fF]unc_\\d+_[a-zA-Z_]+|m_\\d+_|[fF]ield_\\d+_[a-zA-Z_]+|f_\\d+_|p_\\w+_\\d+_|p_\\d+_)");
+    private static final Pattern SRG_PATTERN = Pattern.compile("(?:[fF]unc_\\d+_[a-zA-Z_]+|m_\\d+_|[fF]ield_\\d+_[a-zA-Z_]+|f_\\d+_|p_\\w+_\\d+_|p_\\d+_)");
     public abstract @InputFiles ConfigurableFileCollection getSources();
     public abstract @OutputFile RegularFileProperty getOutput();
 
@@ -70,16 +70,16 @@ public abstract class RenameSourcesApply extends RenameSourceBase implements Pub
 
     @Inject
     public RenameSourcesApply(RenamerExtensionImpl renamer) {
-    	var base = getProject().getExtensions().findByType(BasePluginExtension.class);
-    	this.getArchiveExtension().convention("jar");
+        var base = getProject().getExtensions().findByType(BasePluginExtension.class);
+        this.getArchiveExtension().convention("jar");
         this.getOutput().convention(base.getLibsDirectory().file(getProject().provider(() -> {
-    		var buf = new StringBuilder();
-    		buf.append(base.getArchivesName().getOrElse(getProject().getName()));
-    		buf.append('-').append(getProject().getVersion());
-    		if (this.getArchiveClassifier().isPresent())
-    			buf.append('-').append(this.getArchiveClassifier().get());
-    		buf.append('.').append(this.getArchiveExtension().get());
-    		return buf.toString();
+            var buf = new StringBuilder();
+            buf.append(base.getArchivesName().getOrElse(getProject().getName()));
+            buf.append('-').append(getProject().getVersion());
+            if (this.getArchiveClassifier().isPresent())
+                buf.append('-').append(this.getArchiveClassifier().get());
+            buf.append('.').append(this.getArchiveExtension().get());
+            return buf.toString();
         })));
         this.getKeepImports().convention(true);
         this.getSortImports().convention(false);
@@ -89,10 +89,10 @@ public abstract class RenameSourcesApply extends RenameSourceBase implements Pub
 
     @Override
     protected ExecResult exec() throws IOException {
-    	if (!this.getRangeMap().isPresent()) {
-    		renameNaive();
-    		return null;
-    	}
+        if (!this.getRangeMap().isPresent()) {
+            renameNaive();
+            return null;
+        }
         return super.exec().rethrowFailure().assertNormalExitValue();
     }
 
@@ -117,68 +117,68 @@ public abstract class RenameSourcesApply extends RenameSourceBase implements Pub
     }
 
     private void renameNaive() throws IOException {
-    	var naiveSrgMap = new HashMap<String, String>();
-    	for (var mapFile : this.getMap()) {
-    		var map = IMappingFile.load(mapFile);
-    		var srg = SRG_PATTERN.asPredicate();
-	    	map.rename(new IRenamer() {
-	    		@Override public String rename(IField value) { return capture(value); }
-	    		@Override public String rename(IMethod value) { return capture(value); }
-	    		@Override public String rename(IParameter value) { return capture(value); }
-	    		private String capture(INode value) {
-	    			if (srg.test(value.getOriginal()))
-	    				naiveSrgMap.put(value.getOriginal(), value.getMapped());
-	    			return value.getMapped();
-	    		}
-	    	});
-    	}
+        var naiveSrgMap = new HashMap<String, String>();
+        for (var mapFile : this.getMap()) {
+            var map = IMappingFile.load(mapFile);
+            var srg = SRG_PATTERN.asPredicate();
+            map.rename(new IRenamer() {
+                @Override public String rename(IField value) { return capture(value); }
+                @Override public String rename(IMethod value) { return capture(value); }
+                @Override public String rename(IParameter value) { return capture(value); }
+                private String capture(INode value) {
+                    if (srg.test(value.getOriginal()))
+                        naiveSrgMap.put(value.getOriginal(), value.getMapped());
+                    return value.getMapped();
+                }
+            });
+        }
 
-    	var output = getOutput().getAsFile().get();
-    	if (output.getParentFile() != null)
-    		Files.createDirectories(output.getParentFile().toPath());
+        var output = getOutput().getAsFile().get();
+        if (output.getParentFile() != null)
+            Files.createDirectories(output.getParentFile().toPath());
 
-    	var seen = new HashSet<String>();
-    	try (var zout = new ZipOutputStream(new FileOutputStream(output))) {
-        	for (var file : this.getSources()) {
-        		if (file.isDirectory()) {
-        			var children = Files.walk(file.toPath()).filter(Files::isRegularFile).map(Path::toFile).toList();
-        			var prefix = file.getAbsolutePath();
-        			if (!prefix.endsWith(File.separator))
-        				prefix += File.separatorChar;
+        var seen = new HashSet<String>();
+        try (var zout = new ZipOutputStream(new FileOutputStream(output))) {
+            for (var file : this.getSources()) {
+                if (file.isDirectory()) {
+                    var children = Files.walk(file.toPath()).filter(Files::isRegularFile).map(Path::toFile).toList();
+                    var prefix = file.getAbsolutePath();
+                    if (!prefix.endsWith(File.separator))
+                        prefix += File.separatorChar;
 
-        			for (var child : children) {
-        				var relative = child.getAbsolutePath().substring(prefix.length());
-        				if (!seen.add(relative))
-        					continue;
-        				if (relative.endsWith(".java")) {
-        					var str = Files.readString(child.toPath(), StandardCharsets.UTF_8);
-        					str = SRG_PATTERN.matcher(str).replaceAll(m -> naiveSrgMap.getOrDefault(m.group(), m.group()));
-            				zout.putNextEntry(new ZipEntry(relative));
-            				zout.write(str.getBytes(StandardCharsets.UTF_8));
-            				zout.closeEntry();
-        				}
-        			}
-        		} else if (file.getName().endsWith(".zip") || file.getName().endsWith(".jar")) {
-        			try (var zin = new ZipInputStream(new FileInputStream(file))) {
-        				ZipEntry entry = null;
-        				while ((entry = zin.getNextEntry()) != null) {
-        					if (!seen.add(entry.getName()))
-        						continue;
+                    for (var child : children) {
+                        var relative = child.getAbsolutePath().substring(prefix.length());
+                        if (!seen.add(relative))
+                            continue;
+                        if (relative.endsWith(".java")) {
+                            var str = Files.readString(child.toPath(), StandardCharsets.UTF_8);
+                            str = SRG_PATTERN.matcher(str).replaceAll(m -> naiveSrgMap.getOrDefault(m.group(), m.group()));
+                            zout.putNextEntry(new ZipEntry(relative));
+                            zout.write(str.getBytes(StandardCharsets.UTF_8));
+                            zout.closeEntry();
+                        }
+                    }
+                } else if (file.getName().endsWith(".zip") || file.getName().endsWith(".jar")) {
+                    try (var zin = new ZipInputStream(new FileInputStream(file))) {
+                        ZipEntry entry = null;
+                        while ((entry = zin.getNextEntry()) != null) {
+                            if (!seen.add(entry.getName()))
+                                continue;
 
-            				if (entry.getName().endsWith(".java")) {
-            					var str = new String(zin.readAllBytes(), StandardCharsets.UTF_8);
-            					str = SRG_PATTERN.matcher(str).replaceAll(m -> naiveSrgMap.getOrDefault(m.group(), m.group()));
-                				zout.putNextEntry(new ZipEntry(entry.getName()));
-                				zout.write(str.getBytes(StandardCharsets.UTF_8));
-                				zout.closeEntry();
-            				}
-        				}
-        			}
-        		} else {
-        			throw new IllegalArgumentException("Unknown input file, only directories and archives supported: " + file.getAbsolutePath());
-        		}
-        	}
-    	}
+                            if (entry.getName().endsWith(".java")) {
+                                var str = new String(zin.readAllBytes(), StandardCharsets.UTF_8);
+                                str = SRG_PATTERN.matcher(str).replaceAll(m -> naiveSrgMap.getOrDefault(m.group(), m.group()));
+                                zout.putNextEntry(new ZipEntry(entry.getName()));
+                                zout.write(str.getBytes(StandardCharsets.UTF_8));
+                                zout.closeEntry();
+                            }
+                        }
+                    }
+                } else {
+                    throw new IllegalArgumentException("Unknown input file, only directories and archives supported: " + file.getAbsolutePath());
+                }
+            }
+        }
     }
 
     public void mappings(String artifact) {
@@ -193,11 +193,11 @@ public abstract class RenameSourcesApply extends RenameSourceBase implements Pub
     }
 
     public void mappings(Provider<?> provider) {
-    	this.getMap().setFrom(Util.toConfiguration(getProject(), provider));
+        this.getMap().setFrom(Util.toConfiguration(getProject(), provider));
     }
 
     public void mappings(TaskProvider<?> task) {
-    	this.getMap().setFrom(Util.toFile(task));
+        this.getMap().setFrom(Util.toFile(task));
     }
 
     public void setMappings(FileCollection files) {

@@ -26,40 +26,40 @@ import net.minecraftforge.srgutils.IMappingFile;
 import net.minecraftforge.srgutils.IMappingFile.Format;
 
 public abstract class ConvertMappings extends DefaultTask implements RenamerTask {
-	public abstract @InputFiles @Classpath ConfigurableFileCollection getMap();
-	public abstract @OutputFile RegularFileProperty getOutput();
-	public abstract @Input Property<String> getFormat();
-	public abstract @Input Property<Boolean> getReverse();
+    public abstract @InputFiles @Classpath ConfigurableFileCollection getMap();
+    public abstract @OutputFile RegularFileProperty getOutput();
+    public abstract @Input Property<String> getFormat();
+    public abstract @Input Property<Boolean> getReverse();
 
-	@Inject
-	public ConvertMappings() {
-		var output = getProject().getLayout().getBuildDirectory().dir("mappings");
-		this.getOutput().convention(output.map(d -> d.file(getName() + '.' + this.getFormat().get())));
-		this.getFormat().convention("tsrg");
-		this.getReverse().convention(false);
-	}
+    @Inject
+    public ConvertMappings() {
+        var output = getProject().getLayout().getBuildDirectory().dir("mappings");
+        this.getOutput().convention(output.map(d -> d.file(getName() + '.' + this.getFormat().get())));
+        this.getFormat().convention("tsrg");
+        this.getReverse().convention(false);
+    }
 
-	@TaskAction
-	protected void exec() throws IOException {
-		var map = IMappingFile.load(this.getMap().getSingleFile());
-		var output = getOutput().getAsFile().get();
-		var format = Format.get(getFormat().get().toLowerCase(Locale.ENGLISH));
-		if (format == null)
-			throw new IllegalArgumentException("Unknown format: " + getFormat().get());
+    @TaskAction
+    protected void exec() throws IOException {
+        var map = IMappingFile.load(this.getMap().getSingleFile());
+        var output = getOutput().getAsFile().get();
+        var format = Format.get(getFormat().get().toLowerCase(Locale.ENGLISH));
+        if (format == null)
+            throw new IllegalArgumentException("Unknown format: " + getFormat().get());
 
-		Files.createDirectories(output.getParentFile().toPath());
-		map.write(output.toPath(), format, getReverse().get());
-	}
+        Files.createDirectories(output.getParentFile().toPath());
+        map.write(output.toPath(), format, getReverse().get());
+    }
 
-	public void map(Provider<?> provider) {
-		this.getMap().setFrom(Util.toConfiguration(getProject(), provider));
-	}
+    public void map(Provider<?> provider) {
+        this.getMap().setFrom(Util.toConfiguration(getProject(), provider));
+    }
 
-	public void map(TaskProvider<?> task) {
-		this.getMap().setFrom(Util.toFile(task));
-	}
+    public void map(TaskProvider<?> task) {
+        this.getMap().setFrom(Util.toFile(task));
+    }
 
-	public void map(ConfigurableFileCollection value) {
-		this.getMap().setFrom(value);
-	}
+    public void map(ConfigurableFileCollection value) {
+        this.getMap().setFrom(value);
+    }
 }

@@ -14,25 +14,25 @@ public interface MixinSourceSetConfig {
      * The reference mapping for this source set.
      * Will inform Mixin of which symbols are mapped to which names at runtime
      */
-	Property<String> getRefMap();
+    Property<String> getRefMap();
 
     /**
      * Stops the Mixin annotation processor from throwing an error when it finds an invalid Mixin target
      */
-	Property<Boolean> getDisableTargetValidator();
+    Property<Boolean> getDisableTargetValidator();
 
     /**
      * Prevents the annotation processor from creating a small {@code .csv} file with data pertaining to annotation processing.
      * Keeping this on will make the AP run slightly faster, but may be worth turning off if you are getting AP file access errors
      */
-	Property<Boolean> getDisableTargetExport();
+    Property<Boolean> getDisableTargetExport();
 
     /**
      * By default, when a Mixin target is annotated with {@code @Overwrite}, it is enforced that a Javadoc block above it
      * contains at least an {@code @author} and {@code @reason} tag. Turning this off will prevent Mixin from complaining
      * (ignore, warn or error, see {@link #getOverwriteErrorLevel()}) in such a case where these tags are missing
      */
-	Property<Boolean> getDisableOverwriteChecker();
+    Property<Boolean> getDisableOverwriteChecker();
 
     /**
      * The level of complaining the Mixin annotation processor will do when it finds an {@code @Overwrite} annotated target
@@ -43,12 +43,12 @@ public interface MixinSourceSetConfig {
      *     <li>{@code error}: Throw an error</li>
      * </ul>
      */
-	Property<String> getOverwriteErrorLevel();
+    Property<String> getOverwriteErrorLevel();
 
     /**
      * The current workspace mapping type, used so that Mixin can translate your obfuscated names for creating the refmap
      */
-	Property<String> getDefaultObfuscationEnv();
+    Property<String> getDefaultObfuscationEnv();
 
     /**
      * The other half of {@link #getDefaultObfuscationEnv()}, the output mapping type to translate to for creating entries in the refmap
@@ -60,27 +60,27 @@ public interface MixinSourceSetConfig {
      * <p>
      * Example :{@code @Inject(method = "foo" at = @At("HEAD"), constraints="myToken(myValue)"}
      */
-	MapProperty<String, String> getTokens();
+    MapProperty<String, String> getTokens();
 
     /**
      * Extra mapping files to use for creating refmaps, usually for obfuscated external dependencies
      */
-	ConfigurableFileCollection getExtraMappings();
+    ConfigurableFileCollection getExtraMappings();
 
     /**
      * "Quietens" the console by suppressing trivial and often unneeded messages
      */
-	Property<Boolean> getQuiet();
+    Property<Boolean> getQuiet();
 
     /**
      * Prefix mixin logs with the type of message, such as {@code [MIXIN_0100]} which refers to a missing {@code @author} tag
      */
-	Property<Boolean> getShowMessageTypes();
+    Property<Boolean> getShowMessageTypes();
 
     /**
      * Which message types to hide, warn about or simply display. These can be seen by enabling {@link #getShowMessageTypes()}
      * <p>
      * Example: {@code "MIXIN_0100": "ignore"}
      */
-	MapProperty<String, String> getMessages();
+    MapProperty<String, String> getMessages();
 }
