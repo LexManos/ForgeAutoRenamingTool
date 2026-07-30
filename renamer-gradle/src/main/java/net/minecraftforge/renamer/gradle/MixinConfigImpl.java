@@ -27,6 +27,7 @@ abstract class MixinConfigImpl implements MixinConfig {
 	private final Map<String, MixinSourceSetConfigImpl> sourceSets = new HashMap<>();
 	private final TaskProvider<ConvertMappings> formatMappings;
 	private final TaskProvider<MergeMappings> generatedMappings;
+	private final TaskProvider<ConvertMappings> formatDevMappings;
 
 	@Inject
 	public MixinConfigImpl(RenamerExtensionImpl ext) {
@@ -34,6 +35,13 @@ abstract class MixinConfigImpl implements MixinConfig {
 		this.getMappingTypes().convention(List.of("tsrg"));
     	this.formatMappings = ext.convert("formatMixinMappings", null, "tsrg", task -> task.map(ext.mappings));
     	this.generatedMappings = ext.merge("mergeMixinMappings", task -> task.map(this.formatMappings));
+
+		// This needs to be SRG format, SRG->MCP,
+		// https://github.com/SpongePowered/Mixin/blob/4053421aa10aaac6127d969028a29c94fe3054f6/src/main/java/org/spongepowered/asm/mixin/refmap/RemappingReferenceMapper.java#L235
+		this.formatDevMappings = ext.convert("formatDevMixinMappings", null, "srg", task -> {
+			task.map(ext.mappings);
+			task.getReverse().set(true); // Assume ext.mappings is MCP->SRG so it needs to be reversed
+		});
 
 		/*
 		 * Mixin Magic:
@@ -100,9 +108,10 @@ abstract class MixinConfigImpl implements MixinConfig {
 			return ret;
 		}));
 		//InvokerHelper.invokeMethod(runConfig, "systemProperty", new String[]{"mixin.env.disableRefMap", "true"});
-		InvokerHelper.invokeMethod(runConfig, "systemProperties", this.generatedMappings.flatMap(task -> task.getOutput()).map(
+		InvokerHelper.invokeMethod(runConfig, "systemProperties", this.formatDevMappings.flatMap(task -> task.getOutput()).map(
 			file -> Map.of(
 				"mixin.env.remapRefMap", "true",
+				// This only supports SRG format, SRG->MCP mappings
 				"mixin.env.refMapRemappingFile", file.getAsFile().getAbsolutePath()
 			)
 		));
